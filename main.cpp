@@ -1,11 +1,7 @@
-#include "mainwindow.h"
-
-#include <QApplication>
+#include "linear_motion.h"
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
-    MainWindow w;
-    w.show();
-    return a.exec();
+    linear_motion().perform_unit_test();
+    return 0;
 }

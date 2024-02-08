@@ -12,6 +12,33 @@ void linear_motion::set_debug(bool state, bool state_at_time){
     debug_time_request=state_at_time;
 }
 
+void linear_motion::perform_unit_test(){
+    double vo=0;    // Velocity begin.
+    double ve=0;    // Velocity end.
+    double vm=10;    // Velocity max.
+    double a=2;      // Acceleration max.
+    double s=100;      // Displacement.
+    double interval=0.2;                        // Interval time.
+    bool debug=1;                               // Set debug output.
+    bool debug_time=1;                          // Set debug output.
+
+    linear_motion *lm = new linear_motion();
+    lm->set_debug(debug, debug_time);
+    lm->set_curve_values(vo,ve,vm,a,s);
+
+    lm->get_curve_ve();             // Is "ve" velocity end changed to fit "s" displacement?
+
+    double sr=0,vr=0,ar=0;          // Results for "s" displacement, "v" velocity , "a" acceleration.
+
+    std::cout << std::fixed << std::setprecision(1);
+
+    for(float t=0; t<lm->get_curve_total_time(); t+=interval){
+        lm->get_curve_at_time(t,sr,vr,ar);
+    }
+
+    delete lm;
+}
+
 //! Set curve values and calculate curve.
 void linear_motion::set_curve_values(double velocity_begin,
                                      double velocity_end,
@@ -56,20 +83,20 @@ void linear_motion::get_curve_at_time(double t, double &sr, double &vr, double &
 
         if(std::get<0>(res)==0){
             // std::cout << "acc" << std::endl;
-            vr=acc_dcc_ve_at_time(vo,a,t);
-            sr=acc_dcc_s(vo,vr,a);
+            vr=ve_acc_dcc_at_time(vo,a,t);
+            sr=s_acc_dcc(vo,vr,a);
             ar=a;
         }
         if(std::get<0>(res)==1){
             //std::cout << "steady" << std::endl;
             vr=vm;
-            sr=linear_lenght(vr,t);
+            sr=s_steady(vr,t);
             ar=0;
         }
         if(std::get<0>(res)==2){
             //std::cout << "dcc" << std::endl;
-            vr=acc_dcc_ve_at_time(vo,-a,t);
-            sr=acc_dcc_s(vo,vr,-a);
+            vr=ve_acc_dcc_at_time(vo,-a,t);
+            sr=s_acc_dcc(vo,vr,-a);
             ar=-a;
         }
     }
@@ -79,20 +106,20 @@ void linear_motion::get_curve_at_time(double t, double &sr, double &vr, double &
         double ti=t-t1;
         if(std::get<1>(res)==0){
             // std::cout << "acc" << std::endl;
-            vr=acc_dcc_ve_at_time(vm,a,ti);
-            sr=acc_dcc_s(vm,vr,a)+s1;
+            vr=ve_acc_dcc_at_time(vm,a,ti);
+            sr=s_acc_dcc(vm,vr,a)+s1;
             ar=a;
         }
         if(std::get<1>(res)==1){
             //std::cout << "steady" << std::endl;
             vr=vm;
-            sr=linear_lenght(vr,ti)+s1;
+            sr=s_steady(vr,ti)+s1;
             ar=0;
         }
         if(std::get<1>(res)==2){
             //std::cout << "dcc" << std::endl;
-            vr=acc_dcc_ve_at_time(vm,-a,ti);
-            sr=acc_dcc_s(vm,vr,-a)+s1;
+            vr=ve_acc_dcc_at_time(vm,-a,ti);
+            sr=s_acc_dcc(vm,vr,-a)+s1;
             ar=-a;
         }
     }
@@ -102,20 +129,20 @@ void linear_motion::get_curve_at_time(double t, double &sr, double &vr, double &
         double ti=t-t1-t2;
         if(std::get<2>(res)==0){
             // std::cout << "acc" << std::endl;
-            vr=acc_dcc_ve_at_time(vm,a,ti);
-            sr=acc_dcc_s(vm,vr,a)+s1+s2;
+            vr=ve_acc_dcc_at_time(vm,a,ti);
+            sr=s_acc_dcc(vm,vr,a)+s1+s2;
             ar=a;
         }
         if(std::get<2>(res)==1){
             //std::cout << "steady" << std::endl;
             vr=vm;
-            sr=linear_lenght(vr,ti)+s1+s2;
+            sr=s_steady(vr,ti)+s1+s2;
             ar=0;
         }
         if(std::get<2>(res)==2){
             //std::cout << "dcc" << std::endl;
-            vr=acc_dcc_ve_at_time(vm,-a,ti);
-            sr=acc_dcc_s(vm,vr,-a)+s1+s2;
+            vr=ve_acc_dcc_at_time(vm,-a,ti);
+            sr=s_acc_dcc(vm,vr,-a)+s1+s2;
             ar=-a;
         }
     }
@@ -123,8 +150,21 @@ void linear_motion::get_curve_at_time(double t, double &sr, double &vr, double &
     if(debug_time_request){
         // Set the output to fixed-point notation
         std::cout << std::fixed << std::setprecision(3);
-        std::cout<<"t:"<<t<<" s:"<<sr<<" v:"<<vr<<" a:"<<ar<<std::endl;
+        // Align and print the values
+        std::cout << std::setw(3) << "t:" << std::setw(8) << t
+                  << std::setw(3) << " sr:" << std::setw(8) << sr
+                  << std::setw(3) << " vr:" << std::setw(8) << vr
+                  << std::setw(3) << " ar:" << std::setw(8) << ar
+                  << std::endl;
     }
+}
+
+double linear_motion::a_given_s_vo_t(double s, double vo, double t) {
+    return 2 * (s - vo * t) / (t * t);
+}
+
+double linear_motion::s_given_a_vo_t(double a, double vo, double t) {
+    return vo * t + 0.5 * a * t * t;
 }
 
 //! Calculate curve periods t1,t2,t3 and their state : acc,steday,dcc,none.
@@ -168,32 +208,32 @@ void linear_motion::curve_flow_positive(){
         a2=-abs(a2);
     }
 
-    s1=acc_dcc_s(vo,vm,a1);
-    s3=acc_dcc_s(vm,ve,a2);
+    s1=s_acc_dcc(vo,vm,a1);
+    s3=s_acc_dcc(vm,ve,a2);
     s2=s-s1-s3;
 
-    t1=acc_dcc_time(vo,vm,a1);
-    t2=linear_time(s2,vm);
-    t3=acc_dcc_time(vm,ve,a2);
+    t1=t_acc_dcc(vo,vm,a1);
+    t2=t_steady(s2,vm);
+    t3=t_acc_dcc(vm,ve,a2);
 
-    if(s2<0 && acc_dcc_s(vo,ve, a_pos_neg(vo,ve,a) )>=s && vo<ve){
+    if(s2<0 && s_acc_dcc(vo,ve, a_sign(vo,ve,a) )>=s && vo<ve){
         s1=s;
         s2=0;
         s3=0;
-        ve=acc_ve_given_s(a,vo,s1);
-        t1=acc_dcc_time(vo,ve,a);
+        ve=ve_acc_given_s(a,vo,s1);
+        t1=t_acc_dcc(vo,ve,a);
         t2=0;
         t3=0;
         res=std::make_tuple(acc,none,none);
         return;
     }
 
-    if(s2<0 && acc_dcc_s(vo,ve, a_pos_neg(vo,ve,a) )>=s && vo>ve){
+    if(s2<0 && s_acc_dcc(vo,ve, a_sign(vo,ve,a) )>=s && vo>ve){
         s1=s;
         s2=0;
         s3=0;
-        ve=dcc_ve_given_s(a,vo,s1);
-        t1=acc_dcc_time(vo,ve,a);
+        ve=ve_dcc_given_s(a,vo,s1);
+        t1=t_acc_dcc(vo,ve,a);
         t2=0;
         t3=0;
         res=std::make_tuple(dcc,none,none);
@@ -204,7 +244,7 @@ void linear_motion::curve_flow_positive(){
         s1=s;
         s2=0;
         s3=0;
-        t1=linear_time(s1,vm);
+        t1=t_steady(s1,vm);
         t2=0;
         t3=0;
         res=std::make_tuple(steady,none,none);
@@ -269,15 +309,15 @@ void linear_motion::curve_flow_positive(){
                 a2=-abs(a2);
             }
 
-            s1=acc_dcc_s(vo,i,a1);
-            s3=acc_dcc_s(i,ve,a2);
+            s1=s_acc_dcc(vo,i,a1);
+            s3=s_acc_dcc(i,ve,a2);
             s2=s-s1-s3;
 
             if(s2>0){
                 vm=i;
-                t1=acc_dcc_time(vo,vm,a1);
-                t2=linear_time(s2,vm);
-                t3=acc_dcc_time(vm,ve,a2);
+                t1=t_acc_dcc(vo,vm,a1);
+                t2=t_steady(s2,vm);
+                t3=t_acc_dcc(vm,ve,a2);
                 res=std::make_tuple(acc,steady,dcc);
                 return;
             }
@@ -302,15 +342,15 @@ void linear_motion::curve_flow_positive(){
                 a2=-abs(a2);
             }
 
-            s1=acc_dcc_s(vo,i,a1);
-            s3=acc_dcc_s(i,ve,a2);
+            s1=s_acc_dcc(vo,i,a1);
+            s3=s_acc_dcc(i,ve,a2);
             s2=s-s1-s3;
 
             if(s2>0){
                 vm=i;
-                t1=acc_dcc_time(vo,vm,a1);
-                t2=linear_time(s2,vm);
-                t3=acc_dcc_time(vm,ve,a2);
+                t1=t_acc_dcc(vo,vm,a1);
+                t2=t_steady(s2,vm);
+                t3=t_acc_dcc(vm,ve,a2);
                 res=std::make_tuple(dcc,steady,acc);
                 return;
             }
@@ -363,34 +403,34 @@ void linear_motion::curve_flow_negative(){
         a2=-abs(a2);
     }
 
-    s1=acc_dcc_s(vo,vm,a1);
-    s3=acc_dcc_s(vm,ve,a2);
+    s1=s_acc_dcc(vo,vm,a1);
+    s3=s_acc_dcc(vm,ve,a2);
     s2=s-s1-s3;
 
-    t1=acc_dcc_time(vo,vm,a1);
-    t2=linear_time(s2,vm);
-    t3=acc_dcc_time(vm,ve,a2);
+    t1=t_acc_dcc(vo,vm,a1);
+    t2=t_steady(s2,vm);
+    t3=t_acc_dcc(vm,ve,a2);
 
-    if(t2<0 && abs(acc_dcc_s(vo,ve, a_pos_neg(vo,ve,a) ))>= abs(s) && vo<ve){
+    if(t2<0 && abs(s_acc_dcc(vo,ve, a_sign(vo,ve,a) ))>= abs(s) && vo<ve){
         s1=s;
         s2=0;
         s3=0;
-        ve=acc_ve_given_s(a,vo,s1);
-        t1=acc_dcc_time(vo,ve,a);
+        ve=ve_acc_given_s(a,vo,s1);
+        t1=t_acc_dcc(vo,ve,a);
         t2=0;
         t3=0;
         res=std::make_tuple(acc,none,none);
         return;
     }
 
-    if(t2<0 && abs(acc_dcc_s(vo,ve, a_pos_neg(vo,ve,a) ))>= abs(s) && vo>ve){
+    if(t2<0 && abs(s_acc_dcc(vo,ve, a_sign(vo,ve,a) ))>= abs(s) && vo>ve){
         a1=-abs(a1);
         s1=s;
         s2=0;
         s3=0;
-        ve=dcc_ve_given_s(a1,vo,s1);
+        ve=ve_dcc_given_s(a1,vo,s1);
 
-        t1=acc_dcc_time(vo,ve,a1);
+        t1=t_acc_dcc(vo,ve,a1);
         t2=0;
         t3=0;
         res=std::make_tuple(dcc,none,none);
@@ -401,7 +441,7 @@ void linear_motion::curve_flow_negative(){
         s1=s;
         s2=0;
         s3=0;
-        t1=linear_time(s1,vm);
+        t1=t_steady(s1,vm);
         t2=0;
         t3=0;
         res=std::make_tuple(steady,none,none);
@@ -466,15 +506,15 @@ void linear_motion::curve_flow_negative(){
                 a2=-abs(a2);
             }
 
-            s1=acc_dcc_s(vo,i,a1);
-            s3=acc_dcc_s(i,ve,a2);
+            s1=s_acc_dcc(vo,i,a1);
+            s3=s_acc_dcc(i,ve,a2);
             s2=s-s1-s3;
 
             if(s2<0){
                 vm=i;
-                t1=acc_dcc_time(vo,vm,a1);
-                t2=linear_time(s2,vm);
-                t3=acc_dcc_time(vm,ve,a2);
+                t1=t_acc_dcc(vo,vm,a1);
+                t2=t_steady(s2,vm);
+                t3=t_acc_dcc(vm,ve,a2);
                 res=std::make_tuple(acc,steady,dcc);
                 return;
             }
@@ -499,15 +539,15 @@ void linear_motion::curve_flow_negative(){
                 a2=-abs(a2);
             }
 
-            s1=acc_dcc_s(vo,i,a1);
-            s3=acc_dcc_s(i,ve,a2);
+            s1=s_acc_dcc(vo,i,a1);
+            s3=s_acc_dcc(i,ve,a2);
             s2=s-s1-s3;
 
             if(s2<0){
                 vm=i;
-                t1=acc_dcc_time(vo,vm,a1);
-                t2=linear_time(s2,vm);
-                t3=acc_dcc_time(vm,ve,a2);
+                t1=t_acc_dcc(vo,vm,a1);
+                t2=t_steady(s2,vm);
+                t3=t_acc_dcc(vm,ve,a2);
                 res=std::make_tuple(dcc,steady,acc);
                 return;
             }
@@ -606,12 +646,12 @@ void linear_motion::print_curve_info(){
 // ve = vo
 
 // Calculate stopping distance during deceleration until velocity becomes zero
-double linear_motion::stop_length(double v, double a){
+double linear_motion::s_stop(double v, double a){
     // Stopping distance during deceleration: s = (ve^2 - vo^2) / (2 * |a|)
     return (v * v) / (2 * std::abs(a));
 }
 
-double linear_motion::acc_dcc_time(double vo, double ve, double a){
+double linear_motion::t_acc_dcc(double vo, double ve, double a){
     // Formula: time = (ve - vo) / a
     // Avoid division by zero
     // Time output must always be positive, therefore abs(a) is a<0
@@ -622,7 +662,7 @@ double linear_motion::acc_dcc_time(double vo, double ve, double a){
     return abs(ve - vo) / abs(a);
 }
 
-double linear_motion::acc_dcc_s(double vo, double ve, double a){
+double linear_motion::s_acc_dcc(double vo, double ve, double a){
 
     // std::cout<<"vo:"<<vo<<std::endl;
     // std::cout<<"ve:"<<ve<<std::endl;
@@ -636,17 +676,17 @@ double linear_motion::acc_dcc_s(double vo, double ve, double a){
     return sr;
 }
 
-double linear_motion::acc_dcc_ve_at_time(double vo, double a, double t) {
+double linear_motion::ve_acc_dcc_at_time(double vo, double a, double t) {
     // Calculate final velocity given time t.
     return vo + a * t;
 }
 
-double linear_motion::acc_ve_given_s(double a, double vo, double s) {
+double linear_motion::ve_acc_given_s(double a, double vo, double s) {
     // Kinematic equation: ve = sqrt(vo^2 + 2 * a * s)
     return sqrt((vo * vo) + 2 * a * s);
 }
 
-double linear_motion::dcc_ve_given_s(double a, double vo, double s) {
+double linear_motion::ve_dcc_given_s(double a, double vo, double s) {
     // Kinematic equation: ve = sqrt(vo^2 + 2 * a * s)
     //return sqrt((vo * vo) - 2 * a * s);
 
@@ -660,12 +700,12 @@ double linear_motion::dcc_ve_given_s(double a, double vo, double s) {
     }
 }
 
-double linear_motion::linear_lenght(double v, double t){
+double linear_motion::s_steady(double v, double t){
     // Linear motion distance: s = v * t
     return v * t;
 }
 
-double linear_motion::linear_time(double s, double v){
+double linear_motion::t_steady(double s, double v){
     // Formula: time = distance / velocity
     // Avoid division by zero
     if (v == 0.0) {
@@ -675,7 +715,7 @@ double linear_motion::linear_time(double s, double v){
     return s / v;
 }
 
-double linear_motion::a_pos_neg(double vo, double ve, double a){
+double linear_motion::a_sign(double vo, double ve, double a){
     if(vo<ve){
         a=abs(a);
     }

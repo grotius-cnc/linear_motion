@@ -1,7 +1,5 @@
 # Linear Motion Profile Calculator
 
-- Can use negative vo,ve,vm.
-
 ![Linear Motion Profile](linear_motion_profile_0.jpg)
 ![Linear Motion Profile](linear_motion_profile_1.jpg)
 ![Linear Motion Profile](linear_motion_profile_2.jpg)

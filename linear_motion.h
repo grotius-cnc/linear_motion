@@ -40,7 +40,6 @@ public:
 
     void set_debug(bool state, bool state_at_time);
 
-
     void set_curve_values(double velocity_begin,
                           double velocity_end,
                           double velocity_max,
@@ -52,6 +51,8 @@ public:
     double get_curve_total_time();
 
     void get_curve_at_time(double t, double &sr, double &vr, double &ar);
+
+    void perform_unit_test();
 
 private:
     double s=0;
@@ -76,15 +77,41 @@ private:
     void curve_flow_positive();
     void curve_flow_negative();
     void print_curve_info();
-    double stop_length(double v, double a);
-    double acc_dcc_time(double vo, double ve, double a);
-    double acc_dcc_s(double vo, double ve, double a);
-    double acc_dcc_ve_at_time(double vo, double a, double t);
-    double acc_ve_given_s(double a, double vo, double s);
-    double dcc_ve_given_s(double a, double vo, double s);
-    double linear_lenght(double v, double t);
-    double linear_time(double s, double v);
-    double a_pos_neg(double vo, double ve, double a);
+    double s_stop(double v, double a);
+    double t_acc_dcc(double vo, double ve, double a);
+    double s_acc_dcc(double vo, double ve, double a);
+    double ve_acc_dcc_at_time(double vo, double a, double t);
+    double ve_acc_given_s(double a, double vo, double s);
+    double ve_dcc_given_s(double a, double vo, double s);
+    double s_steady(double v, double t);
+    double t_steady(double s, double v);
+    double a_sign(double vo, double ve, double a);
+
+    double a_given_s_vo_t(double s, double vo, double t);
+    double s_given_a_vo_t(double a, double vo, double t);
 };
 
 #endif // LINEAR_MOTION_H
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
