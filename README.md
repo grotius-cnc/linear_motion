@@ -22,7 +22,7 @@
 
 ## Overview
 
-This C++ library provides a Linear Motion Profile Calculator that allows you to generate a linear motion profile based on the given inputs:
+This C-C++ library provides a Linear Motion Profile Calculator that allows you to generate a linear motion profile based on the given inputs:
 
 - Initial velocity       (`vo`)
 - Final velocity         (`ve`)
@@ -32,7 +32,18 @@ This C++ library provides a Linear Motion Profile Calculator that allows you to 
 - Displacement end       (`se`)         
 
 The library calculates the motion profile and allows you to query the position, velocity, and acceleration at different points in time.
-Negative vo,ve,s inputs are ok.
+
+## Options
+
+- Negative displacement begin input
+- Negative displacement end input
+- Negative velocity begin input
+- Negative velocity end input
+
+## Usage
+
+- A positive maximum velocity input is valid for negative velocity inputs. 
+- A positive acceleration value is valid for negative velocity inputs.
 
 ## Example Usage in c++
 
@@ -70,7 +81,7 @@ int main() {
 #include "linear_motion.h"
 
 int main() {
-    // Add a copy of the exter "C" functions :
+    // Add a copy of the extern "C" functions :
     struct linear_motion *linear_ptr;
     extern linear_motion* lm_init_ptr();
     extern void lm_set_values(linear_motion *ptr,
@@ -102,6 +113,35 @@ int main() {
 }
 ```
   
+## Clone & run project using cmake
+
+```
+    git clone https://github.com/grotius-cnc/linear_motion.git
+    cd linear_motion
+	mkdir build
+	cd build
+	cmake ..
+	make
+```
+
+## Edit project in Qt-designer
+
+Open the `CMakeLists.txt` in Qt-designer.
 
 
+## Unit test
+```
+	./runtest
+	
+	// Performing unit tests to validate code :
+	// linear_motion().unit_test_displacement();
+    // linear_motion().unit_test_position_mode(true);
+    // linear_motion().unit_test_velocity_mode_run_forward(true);
+    // linear_motion().unit_test_velocity_mode_run_reverse(true);
+    // linear_motion().unit_test_velocity_mode_run_stop(true);
+```
+
+## Bugs
+
+Please report bugs by creating a issue.
 
