@@ -116,8 +116,8 @@ int main() {
 ## Clone & run project using cmake
 
 ```
-    git clone https://github.com/grotius-cnc/linear_motion.git
-    cd linear_motion
+	git clone https://github.com/grotius-cnc/linear_motion.git
+	cd linear_motion
 	mkdir build
 	cd build
 	cmake ..
@@ -132,13 +132,12 @@ Open the `CMakeLists.txt` in Qt-designer.
 ## Unit test
 ```
 	./runtest
-	
 	// Performing unit tests to validate code :
 	// linear_motion().unit_test_displacement();
-    // linear_motion().unit_test_position_mode(true);
-    // linear_motion().unit_test_velocity_mode_run_forward(true);
-    // linear_motion().unit_test_velocity_mode_run_reverse(true);
-    // linear_motion().unit_test_velocity_mode_run_stop(true);
+	// linear_motion().unit_test_position_mode(true);
+	// linear_motion().unit_test_velocity_mode_run_forward(true);
+	// linear_motion().unit_test_velocity_mode_run_reverse(true);
+	// linear_motion().unit_test_velocity_mode_run_stop(true);
 ```
 
 ## Bugs
