@@ -1,14 +1,23 @@
 # Linear Motion Profile Calculator
 
 - Position mode
+
 ![Linear Motion Profile](unit_test_position_mode.jpg)
-- Velocity mode 
+
+- Velocity mode
+
 ![Linear Motion Profile](unit_test_velocity_mode.jpg)
+
 - Velocity mode, motion stop sequence
+
 ![Linear Motion Profile](unit_test_velocity_mode_stop.jpg)
+
 - Velocity mode, motion forward
+
 ![Linear Motion Profile](unit_test_velocity_mode_run_forward.jpg)
+
 - Velocity mode, motion reverse
+
 ![Linear Motion Profile](unit_test_velocity_mode_run_reverse.jpg)
 
 ## Overview
